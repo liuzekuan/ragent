@@ -45,6 +45,15 @@ ragent:
   eval:
     enabled: true
 
+# Agent 执行架构（ragent.engine.type=agent 时生效）；单模型无 fallback，供应商可用性由 provider 侧保障
+agent:
+  chat:
+    provider: bailian   # 引用 ai.providers 下的供应商，取其 url / api-key / endpoints.chat
+    model: qwen3-max    # 直接传给 OpenAI 兼容端点的模型名
+  max-iters: 10         # ReAct 循环上限，超出后熔断收尾
+  max-retries: 2        # 单次模型调用失败重试次数
+  sse-timeout-ms: 300000
+
 rag:
   storage:
     type: s3  # 可选 s3（rustfs / minio）/ oss（阿里云）

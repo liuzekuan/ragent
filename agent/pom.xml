@@ -8,18 +8,24 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>infra-ai</artifactId>
+    <!-- Agent 执行架构（v2 ReAct）：仅通过窄接口消费 rag 的检索门面与人设解析 -->
+    <artifactId>agent</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.nageoffer.ai</groupId>
-            <artifactId>framework</artifactId>
+            <artifactId>rag</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp-jvm</artifactId>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-model-openai</artifactId>
         </dependency>
     </dependencies>
 </project>
