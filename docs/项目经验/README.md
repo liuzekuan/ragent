@@ -6,6 +6,12 @@
 
 - [认证与权限](./认证与权限.md)
   - 聚焦 Sa-Token 在本项目中的登录态、角色校验、`UserContext` 链路，以及新平台从 0 接入的方式
+- [Git 本地配置与提交隔离](./Git-本地配置与提交隔离.md)
+  - 总结 `git stash`、不 `git add`、`.gitignore` 的区别，以及本项目中配置文件隔离的推荐做法
+- [RocketMQ 消息发送与事务消息](./RocketMQ消息发送与事务消息.md)
+  - 从 0 搭建普通消息和事务消息，重点使用项目真实的 `MessageQueueProducer`、`RocketMQProducerAdapter`、`DelegatingTransactionListener`、`TransactionChecker` 和 `KnowledgeDocumentChunkConsumer` 示例
+- [数据库租约锁：从定时扫描到分布式任务治理](./数据库租约锁：从定时扫描到分布式任务治理.md)
+  - 以知识库文档扫描任务为例，掌握原子领取、唯一所有权、TTL、心跳续约、状态防覆盖、业务幂等与故障补偿，并总结在新项目中的落地步骤
 
 ## 建议记录的内容
 
