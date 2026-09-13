@@ -156,19 +156,4 @@
             <artifactId>validation-api</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <testResources>
-            <testResource>
-                <directory>src/test/resources</directory>
-            </testResource>
-            <!-- 引用 bootstrap 的主配置跑 @SpringBootTest，单一来源避免测试副本漂移 -->
-            <testResource>
-                <directory>${project.basedir}/../bootstrap/src/main/resources</directory>
-                <includes>
-                    <include>application.yaml</include>
-                </includes>
-            </testResource>
-        </testResources>
-    </build>
 </project>

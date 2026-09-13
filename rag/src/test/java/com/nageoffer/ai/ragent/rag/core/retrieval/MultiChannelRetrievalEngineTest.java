@@ -31,6 +31,7 @@ import com.nageoffer.ai.ragent.rag.core.retrieval.channel.SearchContext;
 import com.nageoffer.ai.ragent.rag.core.retrieval.postprocessor.SearchResultPostProcessor;
 import com.nageoffer.ai.ragent.rag.dto.SubQuestionIntent;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Map;
@@ -174,7 +175,13 @@ class MultiChannelRetrievalEngineTest {
             assertTrue(result.retrievedIntentIds().isEmpty());
             assertTrue(result.eligibleIntentIds(List.of(candidate)).isEmpty());
             assertTrue(elapsedMs < 800, "慢通道不得钳制整次检索，实际耗时 " + elapsedMs + "ms");
-            verify(slow).emptyResult(0L);
+
+            // 降级出口记的耗时必须是等到放弃为止的真实值：记 0 会让「等满预算才放弃」在统计与日志里
+            // 长得跟「秒回、库里没料」一模一样
+            ArgumentCaptor<Long> degradedLatency = ArgumentCaptor.forClass(Long.class);
+            verify(slow).emptyResult(degradedLatency.capture());
+            assertTrue(degradedLatency.getValue() >= 200,
+                    "降级结果须记真实等待耗时，实际 " + degradedLatency.getValue() + "ms");
         } finally {
             pool.shutdownNow();
         }

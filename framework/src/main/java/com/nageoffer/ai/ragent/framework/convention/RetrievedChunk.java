@@ -68,6 +68,14 @@ public class RetrievedChunk {
     private Float score;
 
     /**
+     * 精排相关度 0~1
+     * 不读 {@link #score}：余弦、BM25、倒数名次、RRF 都往那里写 读到时认不出是谁写的
+     * 精排跳过或降级 noop 时 留在 score 里的是上一个写入方的值
+     * 只有真精排客户端写这个字段 null 即没跑过精排
+     */
+    private Float rerankScore;
+
+    /**
      * 所属知识库 collection
      * 检索时由各后端从存储侧字段填充 用于按库推导意图归属 无库来源（如联网检索）为 null
      */

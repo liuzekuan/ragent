@@ -22,7 +22,7 @@ export interface ConversationMessageVO {
 }
 
 export async function listSessions() {
-  return api.get<ConversationVO[]>("/conversations");
+  return api.get<ConversationVO[], ConversationVO[]>("/conversations");
 }
 
 export async function deleteSession(conversationId: string) {
@@ -34,5 +34,7 @@ export async function renameSession(conversationId: string, title: string) {
 }
 
 export async function listMessages(conversationId: string) {
-  return api.get<ConversationMessageVO[]>(`/conversations/${conversationId}/messages`);
+  return api.get<ConversationMessageVO[], ConversationMessageVO[]>(
+    `/conversations/${conversationId}/messages`
+  );
 }

@@ -59,7 +59,7 @@ services:
     environment:
       WORKING_DIR: "/app/data/rag_storage"
       INPUT_DIR: "/app/data/inputs"
-      # —— LLM 与后端默认模型一致使用百炼；Embedding 使用 SiliconFlow ——
+      # —— LLM 与 Embedding 均与后端默认模型一致使用百炼 OpenAI 兼容接口 ——
       LLM_BINDING: "${LLM_BINDING:-openai}"
       LLM_BINDING_HOST: "${LLM_BINDING_HOST:-https://dashscope.aliyuncs.com/compatible-mode/v1}"
       LLM_BINDING_API_KEY: "${BAILIAN_API_KEY:?BAILIAN_API_KEY is required}"
@@ -68,11 +68,11 @@ services:
       # 仅对改后新建 / 重建的索引生效，已抽取出的英文描述需重建索引才会转为中文
       SUMMARY_LANGUAGE: "${SUMMARY_LANGUAGE:-简体中文}"
       EMBEDDING_BINDING: "${EMBEDDING_BINDING:-openai}"
-      EMBEDDING_BINDING_HOST: "${EMBEDDING_BINDING_HOST:-https://api.siliconflow.cn/v1}"
-      EMBEDDING_BINDING_API_KEY: "${SILICONFLOW_API_KEY:?SILICONFLOW_API_KEY is required}"
-      EMBEDDING_MODEL: "${EMBEDDING_MODEL:-Qwen/Qwen3-Embedding-8B}"
+      EMBEDDING_BINDING_HOST: "${EMBEDDING_BINDING_HOST:-https://dashscope.aliyuncs.com/compatible-mode/v1}"
+      EMBEDDING_BINDING_API_KEY: "${BAILIAN_API_KEY:?BAILIAN_API_KEY is required}"
+      EMBEDDING_MODEL: "${EMBEDDING_MODEL:-text-embedding-v4}"
       EMBEDDING_DIM: "${EMBEDDING_DIM:-1536}" # 与 application.yaml 的 rag.default.dimension 一致
-      EMBEDDING_SEND_DIM: "true"  # 要求 SiliconFlow 实际返回 1536 维，而非模型默认维度
+      EMBEDDING_SEND_DIM: "true"  # 要求百炼实际返回 1536 维，而非模型默认维度
       # —— 存储：图 = Neo4j；KV / 向量 / 文档状态 = 复用宿主 PostgreSQL ——
       LIGHTRAG_GRAPH_STORAGE: "Neo4JStorage"
       LIGHTRAG_KV_STORAGE: "PGKVStorage"

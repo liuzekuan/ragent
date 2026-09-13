@@ -227,6 +227,7 @@ public class AgentProfileAdminServiceImpl implements AgentProfileAdminService {
                 .map(slot -> AgentPromptConfigVO.Slot.builder()
                         .slotKey(slot.name())
                         .displayName(slot.getDisplayName())
+                        .editorHint(slot.getEditorHint())
                         .group(slot.getGroup().name())
                         .groupName(slot.getGroup().getDisplayName())
                         .effective(slot.isEffectiveIn(mode))

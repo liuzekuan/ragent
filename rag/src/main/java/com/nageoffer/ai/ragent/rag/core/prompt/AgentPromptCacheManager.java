@@ -39,7 +39,10 @@ public class AgentPromptCacheManager {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
-    private static final String CACHE_KEY = "ragent:agent:resolved-prompts";
+    /**
+     * 缓存结构随提示词槽位集合变化时递增版本，避免旧缓存缺少新增槽位
+     */
+    private static final String CACHE_KEY = "ragent:agent:resolved-prompts:v2";
 
     private static final long CACHE_EXPIRE_HOURS = 1;
 

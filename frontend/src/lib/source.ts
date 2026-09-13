@@ -74,7 +74,7 @@ export interface SourceDisplayName {
  * 书名/文章名挤没。这里把次要信息抽到副标题，原始值仍由调用方保留在 title 属性里
  */
 export function displayName(source: SourceRef): SourceDisplayName {
-  const raw = (source.docName || "").replace(/　/g, " ");
+  const raw = (source.docName || "").replace(/\u3000/g, " ");
   if (!raw.trim()) return { title: "未命名文档", detail: "" };
 
   const details: string[] = [];

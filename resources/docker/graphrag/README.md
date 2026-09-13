@@ -12,23 +12,25 @@ KV / 向量 / 文档状态**复用宿主机已有的 PostgreSQL**（后端同一
 ## 前置条件
 
 - 宿主机 PostgreSQL 可访问，且已安装 `pgvector`（与后端共用，库名默认 `ragent`）
-- 已准备百炼与 SiliconFlow API Key
+- 已准备百炼 API Key（LLM 与 Embedding 共用）
 - 已安装 Docker / Docker Compose
 
 Compose 从同目录 `.env` 读取本地参数；仓库只提交 `.env.example`，实际 `.env` 已加入 `.gitignore`。默认 PostgreSQL 配置与项目 `application.yaml` 一致：`postgres/postgres`、数据库 `ragent`。
+
+`LLM_BINDING` 与 `EMBEDDING_BINDING` 仍配置为 `openai`，这是 LightRAG 对 OpenAI 兼容接口的适配器名称；实际供应商由 `*_BINDING_HOST`、模型名和 API Key 决定，当前均指向阿里云百炼。
 
 ## 启动
 
 ```bash
 cd resources/docker/graphrag
 cp .env.example .env
-# 编辑 .env，填写 BAILIAN_API_KEY 与 SILICONFLOW_API_KEY
+# 编辑 .env，填写 BAILIAN_API_KEY
 docker compose -f lightrag-neo4j-stack.compose.yaml up -d
 ```
 
 ### 在 IDEA 中启动
 
-1. 在 `resources/docker/graphrag` 目录将 `.env.example` 复制为 `.env`，填写两个 API Key
+1. 在 `resources/docker/graphrag` 目录将 `.env.example` 复制为 `.env`，填写 `BAILIAN_API_KEY`
 2. 打开 `lightrag-neo4j-stack.compose.yaml`
 3. 点击编辑器左侧 Compose 的启动按钮，直接启动整个栈
 
@@ -47,6 +49,8 @@ Docker Compose 默认把首个 Compose 文件所在目录作为项目目录，�
 | Neo4j Browser | 浏览器打开 http://localhost:7474 （账号密码见 `.env` 的 `NEO4J_USERNAME` / `NEO4J_PASSWORD`） |
 | 写入连通 | `curl -X POST http://localhost:9621/documents/text -H 'Content-Type: application/json' -d '{"text":"张三是某公司CEO，公司总部在杭州。","file_source":"smoke_test"}'`，稍候在 Neo4j Browser 执行 `MATCH (n) RETURN n LIMIT 25` 可见抽取出的实体与关系 |
 
+> 清空图数据：`curl -X DELETE http://localhost:9621/documents`
+
 ## 对接后端
 
 栈就绪后，在后端 `application.yaml` 打开图谱通道并重启：
@@ -58,7 +62,7 @@ rag:
     lightrag:
       base-url: http://127.0.0.1:9621     # 本机默认；后端与本栈不同机时改为对应地址
       query-mode: hybrid                  # 只回图结构证据，与向量 / 关键词通道正交（可选 naive / local / global / hybrid / mix）
-    embedding-model: qwen-emb-8b          # 与 Compose 的 SiliconFlow Embedding 配置一致
+    embedding-model: qwen-emb-8b          # 与 Compose 的百炼 text-embedding-v4 配置一致
     ingestion:
       async: true
       global-workspace: false
@@ -76,7 +80,7 @@ rag:
 
 ## 注意事项
 
-- 后端 `rag.default.dimension` 与 Compose 的 `EMBEDDING_DIM` 当前均为 `1536`；`EMBEDDING_SEND_DIM=true` 会要求 SiliconFlow 返回相同维度
+- 后端 `rag.default.dimension` 与 Compose 的 `EMBEDDING_DIM` 当前均为 `1536`；`EMBEDDING_SEND_DIM=true` 会要求百炼返回相同维度
 - **Embedding 模型或维度首次索引后不可更换**。修改前需清空 LightRAG 存储（PG 中 `LIGHTRAG_*` 表 + Neo4j 数据）再重新索引
 - Compose 中的账号密码只面向本机开发，请勿把当前端口和固定密码直接用于生产或暴露到公网
 - **镜像 tag 建议 pin 到已验证的具体版本**，勿长期用 `latest`（社区仓库历史上出现过超前日期版本 / 虚构模型名）

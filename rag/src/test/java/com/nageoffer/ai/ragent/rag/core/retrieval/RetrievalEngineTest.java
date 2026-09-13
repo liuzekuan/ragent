@@ -19,6 +19,8 @@ package com.nageoffer.ai.ragent.rag.core.retrieval;
 
 import com.nageoffer.ai.ragent.framework.convention.RetrievedChunk;
 import com.nageoffer.ai.ragent.framework.convention.RetrievedChunkKey;
+import com.nageoffer.ai.ragent.rag.config.OrchestrationMode;
+import com.nageoffer.ai.ragent.rag.config.OrchestrationProperties;
 import com.nageoffer.ai.ragent.rag.config.SearchChannelProperties;
 import com.nageoffer.ai.ragent.rag.core.intent.IntentNode;
 import com.nageoffer.ai.ragent.rag.core.intent.NodeScore;
@@ -28,12 +30,14 @@ import com.nageoffer.ai.ragent.rag.core.prompt.ContextFormatter;
 import com.nageoffer.ai.ragent.rag.core.prompt.DefaultContextFormatter;
 import com.nageoffer.ai.ragent.rag.core.prompt.PromptTemplateLoader;
 import com.nageoffer.ai.ragent.rag.dto.RetrievalContext;
+import com.nageoffer.ai.ragent.rag.enums.IntentKind;
 import com.nageoffer.ai.ragent.rag.dto.SubQuestionIntent;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.nageoffer.ai.ragent.rag.constant.RAGConstant.MULTI_CHANNEL_KEY;
@@ -45,6 +49,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class RetrievalEngineTest {
@@ -167,6 +172,31 @@ class RetrievalEngineTest {
         assertEquals(Set.of("A"), result.getEligibleIntentIds());
     }
 
+    @Test
+    void agentModeSkipsMcpOnRagChain() {
+        McpToolRegistry registry = mock(McpToolRegistry.class);
+        McpParameterExtractor extractor = mock(McpParameterExtractor.class);
+
+        RetrievalContext result = engine(knowledgeMiss(), mock(ContextFormatter.class),
+                registry, extractor, OrchestrationMode.AGENT)
+                .retrieve(List.of(new SubQuestionIntent("帮我取消订单 88231", List.of(mcpIntent("cancel_order")))));
+
+        assertEquals("", result.getMcpContext());
+        verifyNoInteractions(registry, extractor);
+    }
+
+    @Test
+    void workflowModeStillExecutesMcpOnRagChain() {
+        McpToolRegistry registry = mock(McpToolRegistry.class);
+        when(registry.getExecutor("cancel_order")).thenReturn(Optional.empty());
+
+        engine(knowledgeMiss(), mock(ContextFormatter.class),
+                registry, mock(McpParameterExtractor.class), OrchestrationMode.WORKFLOW)
+                .retrieve(List.of(new SubQuestionIntent("帮我取消订单 88231", List.of(mcpIntent("cancel_order")))));
+
+        verify(registry).getExecutor("cancel_order");
+    }
+
     private Set<String> eligibleAfterTwoQuestions(KnowledgeRetrievalResult first,
                                                    KnowledgeRetrievalResult second) {
         MultiChannelRetrievalEngine multiChannel = mock(MultiChannelRetrievalEngine.class);
@@ -182,16 +212,43 @@ class RetrievalEngineTest {
     }
 
     private RetrievalEngine engine(MultiChannelRetrievalEngine multiChannel, ContextFormatter contextFormatter) {
+        return engine(multiChannel, contextFormatter, mock(McpToolRegistry.class),
+                mock(McpParameterExtractor.class), OrchestrationMode.WORKFLOW);
+    }
+
+    private RetrievalEngine engine(MultiChannelRetrievalEngine multiChannel,
+                                   ContextFormatter contextFormatter,
+                                   McpToolRegistry mcpToolRegistry,
+                                   McpParameterExtractor mcpParameterExtractor,
+                                   OrchestrationMode mode) {
+        OrchestrationProperties orchestration = new OrchestrationProperties();
+        orchestration.setType(mode.name().toLowerCase());
         return new RetrievalEngine(
                 new SearchChannelProperties(),
+                orchestration,
                 contextFormatter,
                 mock(PromptTemplateLoader.class),
-                mock(McpParameterExtractor.class),
-                mock(McpToolRegistry.class),
+                mcpParameterExtractor,
+                mcpToolRegistry,
                 multiChannel,
                 Runnable::run,
                 Runnable::run
         );
+    }
+
+    private MultiChannelRetrievalEngine knowledgeMiss() {
+        MultiChannelRetrievalEngine multiChannel = mock(MultiChannelRetrievalEngine.class);
+        when(multiChannel.retrieveKnowledgeChannels(
+                any(SubQuestionIntent.class), any(RetrievalBudget.class)))
+                .thenReturn(KnowledgeRetrievalResult.empty());
+        return multiChannel;
+    }
+
+    private NodeScore mcpIntent(String toolId) {
+        return NodeScore.builder()
+                .node(IntentNode.builder().id(toolId).name(toolId).kind(IntentKind.MCP).mcpToolId(toolId).build())
+                .score(0.9)
+                .build();
     }
 
     private NodeScore intent(String id) {

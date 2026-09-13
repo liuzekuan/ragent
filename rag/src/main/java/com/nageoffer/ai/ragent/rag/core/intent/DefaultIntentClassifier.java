@@ -44,6 +44,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.nageoffer.ai.ragent.rag.constant.RAGConstant.INTENT_CLASSIFIER_PROMPT_PATH;
@@ -103,6 +104,15 @@ public class DefaultIntentClassifier implements IntentClassifier, IntentNodeRegi
         }
         IntentTreeData data = loadIntentTreeData();
         return data.id2Node.get(id);
+    }
+
+    @Override
+    public List<IntentNode> listMcpToolNodes() {
+        return loadIntentTreeData().leafNodes.stream()
+                .filter(IntentNode::isMCP)
+                .filter(node -> node.getMcpToolId() != null && !node.getMcpToolId().isBlank())
+                .sorted(Comparator.comparing(IntentNode::getId))
+                .toList();
     }
 
     /**
@@ -238,7 +248,7 @@ public class DefaultIntentClassifier implements IntentClassifier, IntentNodeRegi
      * - 列出所有【叶子节点】的 id / 路径 / 描述 / 示例问题
      * - 要求 LLM 只在这些 id 中选择，输出 JSON 数组：[{"id": "...", "score": 0.9, "reason": "..."}]
      * - 特别强调：如果问题里只提到 "OA系统"，不要选 "保险系统" 的分类
-     * - 如果存在 MCP 类型节点，使用增强版 Prompt 并添加 type/toolId 标识
+     * - 每个节点都带 type 标识，MCP 节点额外带 toolId，模板据此区分文档检索、实时查询和交互应答
      */
     private String buildPrompt(List<IntentNode> leafNodes) {
         StringBuilder sb = new StringBuilder();
@@ -294,7 +304,9 @@ public class DefaultIntentClassifier implements IntentClassifier, IntentNodeRegi
             node.setId(each.getIntentCode());
             node.setParentId(each.getParentCode());
             node.setMcpToolId(each.getMcpToolId());
+            node.setRequireConfirm(Objects.equals(each.getRequireConfirm(), 1));
             node.setParamPromptTemplate(each.getParamPromptTemplate());
+            node.setExamples(parseExamples(each.getExamples()));
             if (CollUtil.isEmpty(each.getCollectionNames())) {
                 node.setCollectionNames(
                         each.getCollectionName() == null || each.getCollectionName().isBlank()
@@ -337,6 +349,33 @@ public class DefaultIntentClassifier implements IntentClassifier, IntentNodeRegi
         fillFullPath(roots, null);
 
         return roots;
+    }
+
+    /**
+     * examples 在库里是 GSON 序列化后的 JSON 数组文本
+     * BeanUtil 只会去掉方括号再按英文逗号切分，元素两侧的引号会原样进到意图识别提示词里
+     */
+    private List<String> parseExamples(String examples) {
+        if (examples == null || examples.isBlank()) {
+            return List.of();
+        }
+        try {
+            JsonElement root = JsonParser.parseString(examples);
+            if (!root.isJsonArray()) {
+                log.warn("意图节点 examples 不是 JSON 数组, 原始值: {}", LogSafe.preview(examples));
+                return List.of();
+            }
+            List<String> result = new ArrayList<>();
+            for (JsonElement el : root.getAsJsonArray()) {
+                if (el.isJsonPrimitive()) {
+                    result.add(el.getAsString());
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn("意图节点 examples 解析失败, 原始值: {}", LogSafe.preview(examples), e);
+            return List.of();
+        }
     }
 
     /**

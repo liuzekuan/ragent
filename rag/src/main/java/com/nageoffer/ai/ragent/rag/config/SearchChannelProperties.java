@@ -65,6 +65,12 @@ public class SearchChannelProperties implements InitializingBean {
     private Fusion fusion = new Fusion();
 
     /**
+     * 证据相关性闸门
+     * 判定这批证据够不够格进提示词 与查哪些库、用什么模态无关 故与 scope / fusion 平级
+     */
+    private Evidence evidence = new Evidence();
+
+    /**
      * 解析召回扇出基数：优先使用显式 recallBudget，未配置（<=0）时回退到最终条数
      */
     public int resolveRecallBudget(int contextTopK) {
@@ -118,6 +124,14 @@ public class SearchChannelProperties implements InitializingBean {
                     "rag.search.scope.supplement-ratio(%s) 必须小于 1：该比例是从主路划给补充路的份额，"
                             + "取到 1 等于把高置信命中库的名额清零，与「定向优先、补充兜底」相反；关闭补充路请填 0",
                     supplementRatio));
+        }
+        // 精排分按 0~1 输出，下限高于 1 则全部证据被丢，表现与「库里没料」一致，线上无从分辨
+        double minRerankScore = evidence.getMinRerankScore();
+        if (Double.isNaN(minRerankScore) || minRerankScore > 1) {
+            throw new IllegalStateException(String.format(
+                    "rag.search.evidence.min-rerank-score(%s) 必须 <=1：精排分按 0~1 输出，"
+                            + "高于 1 会让全部证据被闸门丢弃、KB 侧恒为空；关闭闸门请填 0",
+                    minRerankScore));
         }
     }
 
@@ -309,5 +323,21 @@ public class SearchChannelProperties implements InitializingBean {
          * 未显式配置通道的兜底权重
          */
         private double defaultWeight = 1.0;
+    }
+
+    /**
+     * 证据相关性闸门
+     * 检索只保证返回最像的 N 条 库里没答案时照样满额返回 闸门补一道相关度下限
+     */
+    @Data
+    public static class Evidence {
+
+        /**
+         * 最低精排分 0~1
+         * 整批最高分低于此值则整批丢弃 判为没检索到相关内容
+         * 与 {@link Scope#confidenceThreshold} 的意图分不是一套量纲 共用会让调证据过滤连带改掉作用域收窄
+         * <=0 关闭；无分可读时（精排关闭或降级 noop）放行
+         */
+        private double minRerankScore = 0.2;
     }
 }

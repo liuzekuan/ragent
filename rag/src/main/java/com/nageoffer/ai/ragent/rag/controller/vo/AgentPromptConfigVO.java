@@ -62,6 +62,11 @@ public class AgentPromptConfigVO {
         private String displayName;
 
         /**
+         * 编辑器上方的写法提醒，普通提示词无需额外解释故为 null
+         */
+        private String editorHint;
+
+        /**
          * 控制台分栏：WORKFLOW / AGENT / COMMON
          */
         private String group;

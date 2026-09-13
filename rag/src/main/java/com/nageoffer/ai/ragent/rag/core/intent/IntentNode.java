@@ -113,6 +113,11 @@ public class IntentNode {
     private String mcpToolId;
 
     /**
+     * 执行工具前是否需要用户确认（仅对 kind=MCP 有意义）
+     */
+    private boolean requireConfirm;
+
+    /**
      * 节点级检索 TopK（可选）
      * 未配置时回退到全局 TopK
      */

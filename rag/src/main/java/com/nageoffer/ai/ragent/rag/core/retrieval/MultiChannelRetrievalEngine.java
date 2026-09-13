@@ -150,12 +150,13 @@ public class MultiChannelRetrievalEngine {
         List<CompletableFuture<SearchChannelResult>> futures = enabledChannels.stream()
                 .map(channel -> withTimeout(CompletableFuture.supplyAsync(
                         () -> {
+                            long startTime = System.currentTimeMillis();
                             try {
                                 log.info("执行检索通道：{}", channel.getName());
                                 return channel.search(context);
                             } catch (Exception e) {
                                 log.error("检索通道 {} 执行失败", channel.getName(), e);
-                                return channel.emptyResult(0);
+                                return channel.emptyResult(System.currentTimeMillis() - startTime);
                             }
                         },
                         ragRetrievalExecutor
@@ -243,21 +244,26 @@ public class MultiChannelRetrievalEngine {
     /**
      * 通道级超时：超过预算的通道按空结果降级，不让最慢一条钳制同一子问题里其余通道的融合
      * 只放弃结果、不中断执行，任务仍在池内跑完，超时值过小等于整路白算
+     * <p>
+     * 降级结果记引擎等到放弃为止的真实耗时：记 0 会让下游统计把「等满预算才放弃」读成
+     * 「秒回、库里没料」，而这两者的处置方向正相反——前者调超时、后者补语料
      */
     private CompletableFuture<SearchChannelResult> withTimeout(CompletableFuture<SearchChannelResult> future,
                                                                SearchChannel channel, long timeoutMs) {
         if (timeoutMs <= 0) {
             return future;
         }
+        long startTime = System.currentTimeMillis();
         return future.orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                 .exceptionally(e -> {
+                    long latencyMs = System.currentTimeMillis() - startTime;
                     Throwable cause = e instanceof CompletionException && e.getCause() != null ? e.getCause() : e;
                     if (cause instanceof TimeoutException) {
                         log.warn("检索通道 {} 超过通道级超时 {}ms，放弃其结果，其余通道照常融合", channel.getName(), timeoutMs);
                     } else {
                         log.error("检索通道 {} 异步执行失败", channel.getName(), cause);
                     }
-                    return channel.emptyResult(0);
+                    return channel.emptyResult(latencyMs);
                 });
     }
 

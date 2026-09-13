@@ -167,7 +167,7 @@ export function MessageList({ messages, isLoading, isStreaming, sessionKey }: Me
       }
       window.removeEventListener("load", handleLoad);
     };
-  }, [messages.length, isStreaming, isLoading, sessionKey]);
+  }, [messages.length, isStreaming, isLoading, sessionKey, scrollToBottom]);
 
   React.useEffect(() => {
     return () => {

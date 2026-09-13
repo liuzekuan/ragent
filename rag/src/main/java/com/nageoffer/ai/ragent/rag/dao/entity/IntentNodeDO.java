@@ -95,6 +95,12 @@ public class IntentNodeDO {
     private String mcpToolId;
 
     /**
+     * 执行前是否需要用户确认：0=否，1=是（仅对 kind=2 有意义）
+     * 写操作类 MCP 工具由接入方在此勾选，Agent 调用前弹确认卡片
+     */
+    private Integer requireConfirm;
+
+    /**
      * 节点级检索 TopK（可选）
      * 为空时使用全局默认 TopK
      */

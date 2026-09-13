@@ -8,7 +8,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <!-- 系统支撑域：用户认证与审计，位于各业务引擎之下 -->
+    <!-- 系统支撑域：用户认证、审计与示例问题等平台侧公共能力，位于各业务引擎之下 -->
     <artifactId>system</artifactId>
 
     <dependencies>

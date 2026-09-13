@@ -16,7 +16,7 @@ export async function cancelFeedback(messageId: string) {
 }
 
 export async function generateRecommendedQuestions(messageId: string) {
-  return api.post<RecommendedQuestionsPayload>(
+  return api.post<RecommendedQuestionsPayload, RecommendedQuestionsPayload>(
     `/conversations/messages/${messageId}/recommended-questions`
   );
 }

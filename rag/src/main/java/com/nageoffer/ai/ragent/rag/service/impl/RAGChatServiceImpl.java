@@ -69,6 +69,6 @@ public class RAGChatServiceImpl implements RAGChatService {
 
     @Override
     public void stopTask(String taskId) {
-        taskManager.cancel(taskId);
+        taskManager.cancelByUser(taskId);
     }
 }

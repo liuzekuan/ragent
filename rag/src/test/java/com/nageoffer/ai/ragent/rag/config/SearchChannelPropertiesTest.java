@@ -107,4 +107,16 @@ class SearchChannelPropertiesTest {
         props.getScope().setSupplementRatio(0);
         assertDoesNotThrow(props::afterPropertiesSet, "置零是关闭补充路的回退路径，不应拦截");
     }
+
+    @Test
+    @DisplayName("minRerankScore 高于 1 会让全部证据被闸门丢弃，启动即抛")
+    void minRerankScoreAboveOneThrows() {
+        SearchChannelProperties props = new SearchChannelProperties();
+        props.getEvidence().setMinRerankScore(1.5);
+        assertThrows(IllegalStateException.class, props::afterPropertiesSet,
+                "精排分按 0~1 输出，下限高于 1 则 KB 侧永久静默全黑，且表现与「库里没料」无从分辨");
+
+        props.getEvidence().setMinRerankScore(0);
+        assertDoesNotThrow(props::afterPropertiesSet, "置零是关闭闸门的回退路径，不应拦截");
+    }
 }

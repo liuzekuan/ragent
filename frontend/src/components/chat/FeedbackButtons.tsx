@@ -152,7 +152,6 @@ export function FeedbackButtons({
             sideOffset={6}
             onMouseEnter={openCopyMenu}
             onMouseLeave={scheduleCloseCopyMenu}
-            onOpenAutoFocus={(event) => event.preventDefault()}
             onCloseAutoFocus={(event) => event.preventDefault()}
             className="min-w-[9rem]"
           >

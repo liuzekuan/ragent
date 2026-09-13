@@ -11,6 +11,7 @@ export interface IntentNodeTree {
   collectionName?: string | null;
   collectionNames?: string[] | null;
   mcpToolId?: string | null;
+  requireConfirm?: number | null;
   topK?: number | null;
   kind?: number | null;
   sortOrder?: number | null;
@@ -31,6 +32,7 @@ export interface IntentNodeCreatePayload {
   description?: string | null;
   examples?: string[];
   mcpToolId?: string | null;
+  requireConfirm?: number | null;
   topK?: number | null;
   kind?: number | null;
   sortOrder?: number | null;
@@ -49,6 +51,7 @@ export interface IntentNodeUpdatePayload {
   collectionName?: string | null;
   collectionNames?: string[] | null;
   mcpToolId?: string | null;
+  requireConfirm?: number | null;
   topK?: number | null;
   kind?: number | null;
   sortOrder?: number | null;

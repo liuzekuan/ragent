@@ -17,6 +17,7 @@
 
 package com.nageoffer.ai.ragent.mcp.executor;
 
+import cn.hutool.core.util.StrUtil;
 import com.sun.net.httpserver.HttpServer;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
@@ -236,7 +237,7 @@ class YouComSearchMcpExecutorTest {
 
     private static Map<String, String> parseQuery(String rawQuery) {
         Map<String, String> params = new HashMap<>();
-        if (rawQuery == null || rawQuery.isBlank()) {
+        if (StrUtil.isBlank(rawQuery)) {
             return params;
         }
         for (String pair : rawQuery.split("&")) {

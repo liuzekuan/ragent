@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Boxes,
   Check,
@@ -13,6 +13,7 @@ import {
   ScrollText,
   Search,
   ShieldCheck,
+  Sparkles,
   Tags,
   User,
   Workflow,
@@ -88,6 +89,7 @@ const SUCCESS_OPTIONS = [
 
 const BIZ_TYPE_OPTIONS = [
   { value: "AGENT_PROFILE", label: "智能体" },
+  { value: "AGENT_SKILL", label: "技能" },
   { value: "KNOWLEDGE_BASE", label: "知识库" },
   { value: "KNOWLEDGE_DOCUMENT", label: "文档" },
   { value: "KNOWLEDGE_CHUNK", label: "文档分块" },
@@ -133,6 +135,8 @@ const parseJson = (value?: string | null): unknown => {
 const BIZ_TYPE_META: Record<string, { icon: LucideIcon; className: string }> = {
   // 跟 AgentAvatar 的 orbit-indigo 预设对齐，别单独挑图标和配色
   AGENT_PROFILE: { icon: Orbit, className: "bg-[#eef2ff] text-[#6366F1]" },
+  // 技能挂在智能体名下，取 AgentAvatar 的 sparkles-violet 预设，与智能体的靛蓝同族又能分开
+  AGENT_SKILL: { icon: Sparkles, className: "bg-[#f5f3ff] text-[#8B5CF6]" },
   KNOWLEDGE_BASE: { icon: Database, className: "bg-[#e6f7ff] text-[#1890FF]" },
   KNOWLEDGE_DOCUMENT: { icon: FileText, className: "bg-[#f0f5ff] text-[#2F54EB]" },
   KNOWLEDGE_CHUNK: { icon: Boxes, className: "bg-[#e6fffb] text-[#13C2C2]" },
@@ -441,7 +445,7 @@ export function BizChangeLogPage() {
   const rangeStart = total === 0 ? 0 : (current - 1) * pageSize + 1;
   const rangeEnd = total === 0 ? 0 : Math.min((current - 1) * pageSize + records.length, total);
 
-  const loadData = async (currentPage = pageNo, nextQuery = query, size = pageSize) => {
+  const loadData = useCallback(async (currentPage = pageNo, nextQuery = query, size = pageSize) => {
     try {
       setLoading(true);
       const result = await getBizChangeLogsPage({
@@ -462,11 +466,11 @@ export function BizChangeLogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pageNo, pageSize, query]);
 
   useEffect(() => {
     loadData(pageNo, query, pageSize);
-  }, [pageNo, query, pageSize]);
+  }, [loadData, pageNo, query, pageSize]);
 
   const handleSearch = () => {
     setPageNo(1);

@@ -35,6 +35,8 @@ public class IntentNodeUpdateRequest {
     private String parentCode;
     private String description;
     private List<String> examples;
+    private String mcpToolId;
+    private Integer requireConfirm;
     private String collectionName;
     private List<String> collectionNames;
     private Integer topK;

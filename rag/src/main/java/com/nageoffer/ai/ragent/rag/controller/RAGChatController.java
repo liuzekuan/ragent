@@ -18,6 +18,7 @@
 package com.nageoffer.ai.ragent.rag.controller;
 
 import com.nageoffer.ai.ragent.framework.convention.Result;
+import com.nageoffer.ai.ragent.framework.validation.ChatQuestion;
 import com.nageoffer.ai.ragent.framework.idempotent.IdempotentSubmit;
 import com.nageoffer.ai.ragent.framework.web.Results;
 import com.nageoffer.ai.ragent.rag.config.RAGDefaultProperties;
@@ -48,7 +49,7 @@ public class RAGChatController {
             message = "当前会话处理中，请稍后再发起新的对话"
     )
     @GetMapping(value = "/rag/v3/chat", produces = "text/event-stream;charset=UTF-8")
-    public SseEmitter chat(@RequestParam String question,
+    public SseEmitter chat(@RequestParam @ChatQuestion String question,
                            @RequestParam(required = false) String conversationId,
                            @RequestParam(required = false, defaultValue = "false") Boolean deepThinking) {
         SseEmitter emitter = new SseEmitter(ragDefaultProperties.getSseTimeoutMs());

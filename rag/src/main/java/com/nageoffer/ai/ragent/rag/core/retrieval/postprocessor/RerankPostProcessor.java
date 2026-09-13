@@ -75,8 +75,27 @@ public class RerankPostProcessor implements SearchResultPostProcessor {
                 context.getBudget().contextTopK()
         );
 
+        logScoreSpread(reranked);
         logAttribution(chunks, reranked, results);
         return reranked;
+    }
+
+    /**
+     * 打本批精排分的高低两端，用于校准 {@code rag.search.evidence.min-rerank-score}
+     * 不并进下方多通道归因：那段在单通道下整体早退，而闸门关掉时恰恰最需要这行
+     */
+    private void logScoreSpread(List<RetrievedChunk> reranked) {
+        List<Float> scores = reranked.stream()
+                .map(RetrievedChunk::getRerankScore)
+                .filter(score -> score != null && Float.isFinite(score))
+                .toList();
+        if (scores.isEmpty()) {
+            return;
+        }
+        log.info("检索归因 - 精排分布: {} 条有分, 最高 {}, 最低 {}",
+                scores.size(),
+                scores.stream().max(Float::compare).orElseThrow(),
+                scores.stream().min(Float::compare).orElseThrow());
     }
 
     /**

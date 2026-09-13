@@ -24,6 +24,8 @@ import lombok.Data;
 @Builder
 public class DashboardOverviewVO {
 
+    private String engine;
+
     private String window;
 
     private String compareWindow;

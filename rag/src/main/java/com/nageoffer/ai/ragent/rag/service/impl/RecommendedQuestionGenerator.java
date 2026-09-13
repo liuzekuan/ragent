@@ -27,6 +27,7 @@ import com.nageoffer.ai.ragent.framework.convention.GroundingChunk;
 import com.nageoffer.ai.ragent.framework.trace.RagTraceNode;
 import com.nageoffer.ai.ragent.infra.chat.LLMService;
 import com.nageoffer.ai.ragent.infra.enums.Tier;
+import com.nageoffer.ai.ragent.infra.util.LLMResponseCleaner;
 import com.nageoffer.ai.ragent.rag.core.prompt.AgentPromptResolver;
 import com.nageoffer.ai.ragent.rag.core.prompt.AgentPromptSlot;
 import com.nageoffer.ai.ragent.rag.dto.RecommendedQuestionsPayload;
@@ -122,7 +123,7 @@ public class RecommendedQuestionGenerator {
         if (StrUtil.isBlank(raw)) {
             return RecommendedQuestionsPayload.failed();
         }
-        String stripped = stripCodeFence(raw).trim();
+        String stripped = LLMResponseCleaner.stripMarkdownCodeFence(raw);
         if (StrUtil.isBlank(stripped)) {
             return RecommendedQuestionsPayload.failed();
         }
@@ -150,21 +151,4 @@ public class RecommendedQuestionGenerator {
         }
     }
 
-    /**
-     * 去除可能的 markdown 代码围栏（```json ... ``` 或 ``` ... ```）
-     */
-    private String stripCodeFence(String raw) {
-        String text = raw.trim();
-        if (text.startsWith("```")) {
-            int firstNewline = text.indexOf('\n');
-            if (firstNewline > 0) {
-                text = text.substring(firstNewline + 1);
-            }
-            int lastFence = text.lastIndexOf("```");
-            if (lastFence >= 0) {
-                text = text.substring(0, lastFence);
-            }
-        }
-        return text;
-    }
 }

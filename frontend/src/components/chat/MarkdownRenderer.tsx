@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* eslint-disable */
 
 import * as React from "react";
@@ -189,13 +188,13 @@ export function MarkdownRenderer({ content, messageId, sources }: MarkdownRender
       ]}
       rehypePlugins={[rehypeRaw, rehypeSanitize]}
       components={{
-        code({ inline, className, children, node, ...props }) {
+        code({ className, children, node, ...props }) {
           const match = /language-(\w+)/.exec(className || "");
           const language = match?.[1] || "text";
           const value = String(children).replace(/\n$/, "");
 
-          // 判断是否为内联代码：inline 为 true 或者没有换行符
-          if (inline || !value.includes('\n')) {
+          // react-markdown v9 不再提供 inline 属性；没有换行时按内联代码展示
+          if (!value.includes("\n")) {
             return (
               <code
                 className={cn(

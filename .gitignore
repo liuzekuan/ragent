@@ -47,3 +47,4 @@ resources/docker/graphrag/.env
 ### Tmp Out ###
 .output/
 docs/temp
+.claude/

@@ -32,6 +32,8 @@ export interface AgentProfileList {
 export interface AgentPromptSlot {
   slotKey: string;
   displayName: string;
+  /** 编辑器上方的写法提醒，普通提示词无需额外解释故为 null */
+  editorHint?: string | null;
   group: SlotGroup;
   groupName: string;
   /** 该槽位在当前架构下是否生效 */

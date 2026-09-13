@@ -19,12 +19,16 @@ package com.nageoffer.ai.ragent.rag.core.retrieval;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.nageoffer.ai.ragent.framework.context.UserContext;
 import com.nageoffer.ai.ragent.framework.convention.RetrievedChunk;
 import com.nageoffer.ai.ragent.framework.trace.RagTraceNode;
+import com.nageoffer.ai.ragent.rag.config.OrchestrationMode;
+import com.nageoffer.ai.ragent.rag.config.OrchestrationProperties;
 import com.nageoffer.ai.ragent.rag.config.SearchChannelProperties;
 import com.nageoffer.ai.ragent.rag.core.intent.IntentNode;
 import com.nageoffer.ai.ragent.rag.core.intent.NodeScore;
 import com.nageoffer.ai.ragent.rag.core.intent.NodeScoreFilters;
+import com.nageoffer.ai.ragent.rag.core.mcp.McpCallMeta;
 import com.nageoffer.ai.ragent.rag.core.mcp.McpExtractionResult;
 import com.nageoffer.ai.ragent.rag.core.mcp.McpParameterExtractor;
 import com.nageoffer.ai.ragent.rag.core.mcp.McpToolExecutor;
@@ -67,6 +71,7 @@ import static com.nageoffer.ai.ragent.rag.constant.RAGConstant.MULTI_CHANNEL_KEY
 public class RetrievalEngine {
 
     private final SearchChannelProperties searchProperties;
+    private final OrchestrationProperties orchestrationProperties;
     private final ContextFormatter contextFormatter;
     private final PromptTemplateLoader templateLoader;
     private final McpParameterExtractor mcpParameterExtractor;
@@ -173,9 +178,13 @@ public class RetrievalEngine {
 
         KbResult kbResult = retrieveAndRerank(intent, kbIntents, budget);
 
-        String mcpContext = CollUtil.isNotEmpty(mcpIntents)
-                ? executeMcpAndMerge(intent.subQuestion(), mcpIntents)
-                : "";
+        String mcpContext = "";
+        if (CollUtil.isNotEmpty(mcpIntents)) {
+            // AGENT 档下 MCP 工具的正当入口只有 Agent 自己的工具清单，那条路上有确认卡、技能遮蔽、readOnlyHint
+            if (orchestrationProperties.getMode() == OrchestrationMode.WORKFLOW) {
+                mcpContext = executeMcpAndMerge(intent.subQuestion(), mcpIntents);
+            }
+        }
 
         return new SubQuestionContext(intent.subQuestion(), kbResult.groupedContext(), mcpContext,
                 kbResult.intentChunks(), kbResult.eligibleIntentIds());
@@ -276,7 +285,11 @@ public class RetrievalEngine {
 
         // 按提参结局分流：仅 SUCCESS 才真正调用远端工具，缺必填参 / 提取失败均不调用、改注入提示进上下文
         return switch (extraction.status()) {
-            case SUCCESS -> executor.execute(extraction.params() != null ? extraction.params() : new HashMap<>());
+            // 身份从 UserContext 取：mcpBatchExecutor 与 ragContextExecutor 都被 TtlExecutors 包过，
+            // UserContext 又是 TransmittableThreadLocal，这两跳异步之后仍取得到登录态
+            case SUCCESS -> executor.execute(
+                    extraction.params() != null ? extraction.params() : new HashMap<>(),
+                    McpCallMeta.ofUser(UserContext.getUserId()));
             case NEED_CLARIFICATION -> clarificationResult(toolId, extraction.missingRequired());
             case FAILED -> extractionFailedResult(toolId);
         };

@@ -17,7 +17,6 @@
 
 package com.nageoffer.ai.ragent.rag.core.rewrite;
 
-import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.nageoffer.ai.ragent.rag.dao.entity.QueryTermMappingDO;
 import com.nageoffer.ai.ragent.rag.dao.mapper.QueryTermMappingMapper;
@@ -77,7 +76,8 @@ public class QueryTermMappingService {
      */
     private List<QueryTermMappingDO> loadMappings() {
         List<QueryTermMappingDO> cached = cacheManager.getMappingsFromCache();
-        if (CollUtil.isNotEmpty(cached)) {
+        // 一条规则都没配也要认缓存，否则每次提问都会白读一次数据库，规则增删改各自会清缓存
+        if (cached != null) {
             return cached;
         }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ClipboardList,
@@ -242,7 +242,7 @@ export function IngestionPage() {
   const pipelines = pipelinePage?.records || [];
   const tasks = taskPage?.records || [];
 
-  const loadPipelines = async (pageNo = pipelinePageNo, keyword = pipelineKeyword) => {
+  const loadPipelines = useCallback(async (pageNo = pipelinePageNo, keyword = pipelineKeyword) => {
     setPipelineLoading(true);
     try {
       const data = await getIngestionPipelines(pageNo, PIPELINE_PAGE_SIZE, keyword || undefined);
@@ -253,7 +253,7 @@ export function IngestionPage() {
     } finally {
       setPipelineLoading(false);
     }
-  };
+  }, [pipelineKeyword, pipelinePageNo]);
 
   const loadPipelineOptions = async () => {
     try {
@@ -264,7 +264,7 @@ export function IngestionPage() {
     }
   };
 
-  const loadTasks = async (pageNo = taskPageNo, status = taskStatus) => {
+  const loadTasks = useCallback(async (pageNo = taskPageNo, status = taskStatus) => {
     setTaskLoading(true);
     try {
       const data = await getIngestionTasks(pageNo, TASK_PAGE_SIZE, status);
@@ -275,15 +275,15 @@ export function IngestionPage() {
     } finally {
       setTaskLoading(false);
     }
-  };
+  }, [taskPageNo, taskStatus]);
 
   useEffect(() => {
     loadPipelines();
-  }, [pipelinePageNo, pipelineKeyword]);
+  }, [loadPipelines]);
 
   useEffect(() => {
     loadTasks();
-  }, [taskPageNo, taskStatus]);
+  }, [loadTasks]);
 
   useEffect(() => {
     loadPipelineOptions();
@@ -992,7 +992,7 @@ function PipelineDialog({ open, mode, pipeline, onOpenChange, onSubmit }: Pipeli
       setNodes(buildNodesFromPipeline(pipeline?.nodes));
       setNodeMode("form");
     }
-  }, [open, pipeline, defaultNodes, form]);
+  }, [open, pipeline, defaultNodes, form]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (values: PipelineFormValues) => {
     let nodesPayload: IngestionPipelinePayload["nodes"] | undefined;

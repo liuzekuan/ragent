@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Check, ChevronDown, ChevronRight, FileUp, FileImage, Info, PlayCircle, RefreshCw, Trash2, Pencil, FileBarChart, X, Eye, MoreHorizontal, FileText, FileSpreadsheet, Link as LinkIcon, Download } from "lucide-react";
 import { toast } from "sonner";
@@ -455,7 +455,7 @@ export function KnowledgeDocumentsPage() {
     }
   };
 
-  const loadKnowledgeBase = async () => {
+  const loadKnowledgeBase = useCallback(async () => {
     if (!kbId) return;
     try {
       const data = await getKnowledgeBase(kbId);
@@ -464,9 +464,9 @@ export function KnowledgeDocumentsPage() {
       toast.error(getErrorMessage(error, "加载知识库失败"));
       console.error(error);
     }
-  };
+  }, [kbId]);
 
-  const loadDocuments = async (page = current, status = statusFilter, keywordValue = keyword) => {
+  const loadDocuments = useCallback(async (page = current, status = statusFilter, keywordValue = keyword) => {
     if (!kbId) return;
     setLoading(true);
     try {
@@ -483,15 +483,15 @@ export function KnowledgeDocumentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [current, kbId, keyword, statusFilter]);
 
   useEffect(() => {
     loadKnowledgeBase();
-  }, [kbId]);
+  }, [loadKnowledgeBase]);
 
   useEffect(() => {
     loadDocuments();
-  }, [kbId, current, statusFilter, keyword]);
+  }, [loadDocuments]);
 
   useEffect(() => {
     if (detailTarget) {
@@ -542,7 +542,7 @@ export function KnowledgeDocumentsPage() {
       setDetailNoChunk(false);
       setDetailShowAdvanced(false);
     }
-  }, [detailTarget]);
+  }, [detailTarget, specSchema]);
 
   const handleSearch = () => {
     setCurrent(1);
@@ -1426,9 +1426,9 @@ const uploadSchema = z
   .object({
     sourceType: z.enum(["file", "url"]),
     sourceLocation: z.string().optional(),
-    scheduleEnabled: z.boolean().default(false),
+    scheduleEnabled: z.boolean(),
     scheduleCron: z.string().optional(),
-    processMode: z.enum(["chunk", "pipeline"]).default("chunk"),
+    processMode: z.enum(["chunk", "pipeline"]),
     parseProfile: z.string().optional(),
     pipelineId: z.string().optional(),
     // 用户可控的全部自由度：块预算，字段与后端 schema 的 budgetFields 一一对应
@@ -1631,11 +1631,11 @@ function UploadDialog({ open, onOpenChange, onSubmit }: UploadDialogProps) {
       const payload: KnowledgeDocumentUploadPayload = {
         sourceType: values.sourceType,
         file: values.sourceType === "file" ? file : null,
-        sourceLocation: values.sourceType === "url" ? values.sourceLocation.trim() : null,
+        sourceLocation: values.sourceType === "url" ? values.sourceLocation?.trim() ?? null : null,
         scheduleEnabled: values.sourceType === "url" ? values.scheduleEnabled : false,
         scheduleCron:
           values.sourceType === "url" && values.scheduleEnabled
-            ? values.scheduleCron.trim()
+            ? values.scheduleCron?.trim() ?? null
             : null,
         processMode: values.processMode,
         ingestionSpec: ingestionSpec ?? null,

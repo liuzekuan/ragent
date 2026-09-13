@@ -50,6 +50,11 @@ public class IntentNodeTreeVO {
     private String mcpToolId;
 
     /**
+     * 执行前是否需要用户确认：0=否，1=是（仅对 kind=2 有意义）
+     */
+    private Integer requireConfirm;
+
+    /**
      * 短规则片段（可选）
      */
     private String promptSnippet;

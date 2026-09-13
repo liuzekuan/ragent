@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, Lock, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, Copy, Info, Lock, RotateCcw, Save } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ const GROUP_ORDER: SlotGroup[] = ["WORKFLOW", "AGENT", "COMMON"];
 
 const GROUP_HINT: Record<SlotGroup, string> = {
   WORKFLOW: "仅 WorkFlow 架构下生效",
-  AGENT: "仅 Agent 架构下生效，v2 落地前填写的内容暂不参与运行",
+  AGENT: "仅 Agent 架构下生效",
   COMMON: "两种架构下都生效"
 };
 
@@ -283,6 +283,13 @@ export function AgentPromptPage() {
                   </Button>
                 </div>
               </header>
+
+              {activeSlot.editorHint ? (
+                <div className="agent-prompt-pane__hint">
+                  <Info className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <span>{activeSlot.editorHint}</span>
+                </div>
+              ) : null}
 
               {activeSlot.requiredPlaceholders.length > 0 ? (
                 <div className="agent-prompt-pane__placeholders">

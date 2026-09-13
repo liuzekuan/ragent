@@ -17,12 +17,14 @@
 
 package com.nageoffer.ai.ragent.mcp.executor;
 
+import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nageoffer.ai.ragent.mcp.config.McpToolAnnotations;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema.Tool;
 import io.modelcontextprotocol.spec.McpSchema.JsonSchema;
-import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import lombok.extern.slf4j.Slf4j;
@@ -118,29 +120,30 @@ public class YouComSearchMcpExecutor {
                 .name(TOOL_ID)
                 .description("基于 You.com Search API 的联网搜索，返回带来源链接和摘录片段的网页与新闻结果。需要配置 YDC_API_KEY 环境变量")
                 .inputSchema(inputSchema)
+                .annotations(McpToolAnnotations.READ_ONLY)
                 .build();
     }
 
     CallToolResult handleCall(CallToolRequest request) {
         long startMs = System.currentTimeMillis();
         try {
-            Map<String, Object> args = request.arguments() != null ? request.arguments() : Map.of();
-            String query = stringArg(args, "query");
-            Integer count = intArg(args, "count");
-            String freshness = stringArg(args, "freshness");
+            Map<String, Object> args = McpToolResults.args(request);
+            String query = MapUtil.getStr(args, "query");
+            Integer count = MapUtil.getInt(args, "count");
+            String freshness = MapUtil.getStr(args, "freshness");
 
-            if (query == null || query.isBlank()) {
-                return errorResult("请提供检索关键词 query");
+            if (StrUtil.isBlank(query)) {
+                return McpToolResults.error("请提供检索关键词 query");
             }
             if (count == null || count <= 0) count = DEFAULT_COUNT;
             if (count > MAX_COUNT) count = MAX_COUNT;
-            if (freshness != null && !freshness.isBlank() && !FRESHNESS_VALUES.contains(freshness)) {
-                return errorResult("freshness 参数不合法，可选值：" + String.join("、", FRESHNESS_VALUES));
+            if (StrUtil.isNotBlank(freshness) && !FRESHNESS_VALUES.contains(freshness)) {
+                return McpToolResults.error("freshness 参数不合法，可选值：" + String.join("、", FRESHNESS_VALUES));
             }
 
             String apiKey = readEnv(ENV_API_KEY);
-            if (apiKey == null || apiKey.isBlank()) {
-                return errorResult("You.com 联网搜索未配置：请先设置环境变量 YDC_API_KEY"
+            if (StrUtil.isBlank(apiKey)) {
+                return McpToolResults.error("You.com 联网搜索未配置：请先设置环境变量 YDC_API_KEY"
                         + "（可在 https://you.com/platform/api-keys 获取），配置后重启 MCP Server 即可使用");
             }
 
@@ -148,11 +151,11 @@ public class YouComSearchMcpExecutor {
 
             log.info("MCP 工具调用完成, toolId={}, query={}, count={}, elapsed={}ms",
                     TOOL_ID, query, count, System.currentTimeMillis() - startMs);
-            return successResult(result);
+            return McpToolResults.success(result);
         } catch (Exception e) {
             log.error("MCP 工具调用失败, toolId={}, elapsed={}ms",
                     TOOL_ID, System.currentTimeMillis() - startMs, e);
-            return errorResult("搜索失败: " + e.getMessage());
+            return McpToolResults.error("搜索失败: " + e.getMessage());
         }
     }
 
@@ -163,7 +166,7 @@ public class YouComSearchMcpExecutor {
         StringBuilder url = new StringBuilder(apiUrl)
                 .append("?query=").append(URLEncoder.encode(query, StandardCharsets.UTF_8))
                 .append("&count=").append(count);
-        if (freshness != null && !freshness.isBlank()) {
+        if (StrUtil.isNotBlank(freshness)) {
             url.append("&freshness=").append(freshness);
         }
 
@@ -250,30 +253,5 @@ public class YouComSearchMcpExecutor {
      */
     protected String readEnv(String name) {
         return System.getenv(name);
-    }
-
-    private static String stringArg(Map<String, Object> args, String key) {
-        Object val = args.get(key);
-        return val != null ? val.toString() : null;
-    }
-
-    private static Integer intArg(Map<String, Object> args, String key) {
-        Object val = args.get(key);
-        if (val instanceof Number n) return n.intValue();
-        return null;
-    }
-
-    private static CallToolResult successResult(String text) {
-        return CallToolResult.builder()
-                .content(List.of(new TextContent(text)))
-                .isError(false)
-                .build();
-    }
-
-    private static CallToolResult errorResult(String message) {
-        return CallToolResult.builder()
-                .content(List.of(new TextContent(message)))
-                .isError(true)
-                .build();
     }
 }
